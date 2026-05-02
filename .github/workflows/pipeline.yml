@@ -26,3 +26,11 @@ jobs:
 
       - name: Run Processing
         run: python processing/transform.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Auto update data" || echo "No changes to commit"
+          git push

@@ -45,10 +45,25 @@ for b, t, m in all_combinations:
     if len(products) == 500:
         break
 
-# ---------------- EXTRA FIELDS ----------------
+# ---------------- EXTRA ----------------
 statuses = ["Placed", "Cancelled", "Shipped", "Delivered"]
-reviews = ["Excellent", "Good", "Average", "Bad"]
-ratings = [5, 4, 3, 2]
+
+# -------- REVIEW POOLS --------
+positive_reviews = [
+    "Amazing product!", "Loved it!", "Highly recommended!", "Superb quality!",
+    "Excellent performance", "Worth every penny", "Very satisfied", "Top notch quality",
+    "Fantastic experience", "Best purchase ever"
+]
+
+neutral_reviews = [
+    "Average experience", "Okay product", "Not bad", "Works fine",
+    "Decent quality", "Could be better", "Just okay", "Nothing special"
+]
+
+negative_reviews = [
+    "Not satisfied", "Bad experience", "Waste of money", "Very poor quality",
+    "Disappointed", "Not worth it", "Terrible product", "Will not recommend"
+]
 
 # ---------------- DATA GENERATION ----------------
 data = []
@@ -78,10 +93,17 @@ for i in range(2000):
     cost = price * random.uniform(0.6, 0.9)
     profit = (price - cost) * quantity
 
-    # ---------------- REVIEW ----------------
-    review = random.choice(reviews)
-    rating = random.choice(ratings)
+    # ---------------- SMART RATING + REVIEW ----------------
+    rating = random.randint(1, 5)
 
+    if rating >= 4:
+        review = random.choice(positive_reviews)
+    elif rating == 3:
+        review = random.choice(neutral_reviews)
+    else:
+        review = random.choice(negative_reviews)
+
+    # ---------------- DATA APPEND ----------------
     data.append({
         "order_id": i + 1,
         "customer_id": random.randint(1000, 2000),
@@ -93,10 +115,10 @@ for i in range(2000):
         "timestamp": timestamp,
         "status": status,
         "is_scheduled": is_scheduled,
-        "cost": cost,
-        "profit": profit,
-        "review": review,
+        "cost": round(cost, 2),
+        "profit": round(profit, 2),
         "rating": rating,
+        "review": review,
         "revenue": price * quantity
     })
 
@@ -104,4 +126,4 @@ for i in range(2000):
 df = pd.DataFrame(data)
 df.to_csv("raw_data/orders.csv", index=False)
 
-print("🔥 FULL DATA (Status + Profit + Feedback + 500 Products) GENERATED")
+print("🔥 FINAL DATA GENERATED (500 Products + Status + Profit + Smart Reviews)")

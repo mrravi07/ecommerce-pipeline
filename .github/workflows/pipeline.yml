@@ -1,36 +1,39 @@
 name: Data Pipeline
 
 on:
-  push:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout repo
         uses: actions/checkout@v3
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
-      - name: Install Dependencies
-        run: pip install pandas
+      - name: Install dependencies
+        run: pip install pandas textblob
 
-      - name: Run Data Generator
+      - name: Generate data
         run: python data_generator/generate_orders.py
 
-      - name: Run Processing
+      - name: Transform data
         run: python processing/transform.py
 
-      - name: Commit and Push Changes
+      - name: Commit & Push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add .
-          git commit -m "Auto update data" || echo "No changes to commit"
+          git commit -m "auto update data" || echo "no changes"
           git push

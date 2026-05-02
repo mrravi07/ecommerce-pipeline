@@ -60,7 +60,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # ---------------- TITLE ----------------
-title = "🚀 E-Commerce Analytics System"
+title = "Scalable Real-Time E-Commerce Data Pipeline"
 ph = st.empty()
 for i in range(len(title)+1):
     ph.markdown(f"<h1 style='text-align:center;color:#FFD700'>{title[:i]}</h1>", unsafe_allow_html=True)

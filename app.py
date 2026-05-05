@@ -4,6 +4,7 @@ import plotly.express as px
 import time
 import os
 from textblob import TextBlob
+import random
 
 from streamlit_autorefresh import st_autorefresh
 st_autorefresh(interval=60000)
@@ -78,17 +79,17 @@ section[data-testid="stSidebar"] {
 
 /* ---------- BUTTONS ---------- */
 .stButton>button {
-    background: linear-gradient(135deg, #FFD700, #ffae00);
-    color: black;
-    border-radius: 12px;
-    border: none;
-    font-weight: 600;
-    transition: 0.3s;
+    background: #1f2937;
+    color: #e5e7eb;
+    border-radius: 10px;
+    border: 1px solid #374151;
+    font-weight: 500;
+    transition: 0.25s;
 }
 
 .stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0px 10px 30px rgba(255,215,0,0.5);
+    background: #374151;
+    transform: translateY(-2px);
 }
 
 /* ---------- INPUT ---------- */
@@ -96,6 +97,7 @@ section[data-testid="stSidebar"] {
     background: rgba(255,255,255,0.05);
     border-radius: 10px;
     color: white;
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 /* ---------- TAGS ---------- */
@@ -109,24 +111,75 @@ div[data-baseweb="tag"]:hover {
     color: black !important;
 }
 
+/* ---------- TABS CONTAINER ---------- */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 12px;
+    background: rgba(255,255,255,0.03);
+    padding: 10px;
+    border-radius: 14px;
+    backdrop-filter: blur(12px);
+}
+
+/* ---------- TAB ---------- */
+.stTabs [data-baseweb="tab"] {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    padding: 8px 18px;
+    color: #aaa;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+/* hover */
+.stTabs [data-baseweb="tab"]:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* active tab */
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #FFD700, #ffae00);
+    color: black !important;
+    font-weight: 600;
+    box-shadow: 0px 5px 20px rgba(255,215,0,0.5);
+    transform: scale(1.05);
+}
+
+/* remove default border */
+.stTabs [data-baseweb="tab-border"] {
+    display: none;
+}
+
 </style>
 """, unsafe_allow_html=True)
+
+
+
 
 # ---------------- LOGIN ----------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.title("🔐 Login")
-    u = st.text_input("Username")
-    p = st.text_input("Password", type="password")
 
-    if st.button("Login"):
+    st.title("🔐 Login")
+
+    # ✅ form start
+    with st.form("login_form"):
+
+        u = st.text_input("Username")
+        p = st.text_input("Password", type="password")
+
+        submit = st.form_submit_button("Login")
+
+    # ✅ handle submit (Enter + Button both)
+    if submit:
         if u == "admin" and p == "1234":
             st.session_state.logged_in = True
             st.rerun()
         else:
-            st.error("Invalid")
+            st.error("Invalid username or password")
+
     st.stop()
 
 # ---------------- TITLE ----------------
@@ -142,7 +195,7 @@ Scalable AI E-Commerce Platform
 </h1>
 """, unsafe_allow_html=True)
 
-# ---------------- DATA ----------------
+
 # ---------------- DATA ----------------
 df = pd.read_csv("processed_data/clean_orders.csv")
 
@@ -408,12 +461,35 @@ with tab1:
     st.dataframe(df_f.tail(100))
 
 # ================= FEEDBACK =================
+
+# ---------- NAME GENERATOR ----------
+first_names = [
+    "Aarav","Vivaan","Aditya","Arjun","Reyansh","Ishaan","Kabir","Rohan","Yash","Krishna",
+    "Ananya","Diya","Priya","Neha","Simran","Pooja","Sneha","Kiran","Meera","Ritika",
+    "Rahul","Aman","Varun","Sahil","Nikhil","Akash","Deepak","Ritesh","Manish","Vikas",
+    "Shreya","Kavya","Isha","Naina","Sanya","Tanvi","Muskan","Komal","Riya","Payal"
+]
+
+last_names = [
+    "Sharma","Verma","Gupta","Singh","Yadav","Mishra","Tiwari","Pandey","Dubey","Chauhan",
+    "Patel","Mehta","Jain","Agarwal","Bansal","Kumar","Das","Reddy","Iyer","Nair",
+    "Khan","Ansari","Sheikh","Malik","Qureshi","Kapoor","Khanna","Arora","Gill","Sandhu",
+    "Joshi","Thakur","Chopra","Saxena","Tripathi","Pillai","Menon","Kulkarni","Deshmukh","Ghosh"
+]
+
+def generate_names(n=600):
+    return list(set(
+        random.choice(first_names) + " " + random.choice(last_names)
+        for _ in range(n)
+    ))
+
+# ================= TAB 2 =================
+
 with tab2:
 
-    st.markdown("## 💬 Customer Reviews")
+    st.markdown("## 💬 Customer Reviews Dashboard")
 
-    # 🔥 IMPORTANT CHANGE
-    df_reviews = df.copy()   # orders.csv वाला data use
+    df_reviews = df.copy()
 
     if df_reviews.empty:
         st.info("No reviews available")
@@ -421,198 +497,834 @@ with tab2:
 
         # -------- PRODUCT SELECT --------
         product = st.selectbox("Select Product", sorted(df_reviews["product"].unique()))
+        df_p = df_reviews[df_reviews["product"] == product].copy()
 
-        df_p = df_reviews[df_reviews["product"] == product]
+        # -------- CUSTOMER NAME (FIXED) --------
+        names = generate_names(600)
+       # ---------- UNIQUE NAMES ----------
+        names = generate_names(2000)  # ज्यादा names generate करो
+
+        df_p["customer_name"] = random.sample(
+            names * (len(df_p)//len(names) + 1),  # repeat list safely
+            len(df_p)
+        )
+
+        # -------- PRODUCT-WISE REVIEW COUNT --------
+        if "review_counts" not in st.session_state:
+            st.session_state.review_counts = {}
+
+        if product not in st.session_state.review_counts:
+            st.session_state.review_counts[product] = random.randint(150, 900)
+
+        review_count = st.session_state.review_counts[product]
+
+        # -------- SAMPLING --------
+        df_p = df_p.sample(n=review_count, replace=True)
+
+        # ---------- REALISTIC RATING DISTRIBUTION ----------
+        weights = [0.1, 0.15, 0.2, 0.3, 0.25]  # 1⭐ → 5⭐
+
+        df_p["rating"] = random.choices(
+            [1,2,3,4,5],
+            weights=weights,
+            k=len(df_p)
+        )
 
         # -------- KPI --------
         avg_rating = df_p["rating"].mean()
         total_reviews = len(df_p)
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         col1.metric("⭐ Avg Rating", f"{avg_rating:.2f}")
-        col2.metric("💬 Total Reviews", total_reviews)
+        col2.metric("💬 Reviews", total_reviews)
+        col3.metric("👍 Positive %", f"{(df_p['rating']>=4).mean()*100:.0f}%")
 
-        # -------- REVIEWS --------
-        st.markdown("### 📝 Customer Reviews")
+        # ===============================
+        # 📊 GRAPH
+        # ===============================
+        st.markdown("### 📊 Insights")
 
-        for _, row in df_p.iterrows():
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.bar_chart(df_p["rating"].value_counts().sort_index())
+
+        with col2:
+            df_p["sentiment"] = df_p["rating"].apply(
+                lambda r: "Positive" if r >= 4 else "Neutral" if r == 3 else "Negative"
+            )
+            st.bar_chart(df_p["sentiment"].value_counts())
+
+        # ===============================
+        # 🔎 FILTER
+        # ===============================
+        st.markdown("### 🔎 Filter Reviews")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            rating_filter = st.selectbox("Filter by Rating", ["All", "4⭐+", "3⭐", "Below 3"])
+
+        with col2:
+            search_text = st.text_input("Search keyword")
+
+        df_filtered = df_p.copy()
+
+        if rating_filter == "4⭐+":
+            df_filtered = df_filtered[df_filtered["rating"] >= 4]
+        elif rating_filter == "3⭐":
+            df_filtered = df_filtered[df_filtered["rating"] == 3]
+        elif rating_filter == "Below 3":
+            df_filtered = df_filtered[df_filtered["rating"] < 3]
+
+        if search_text:
+            df_filtered = df_filtered[df_filtered["review"].str.contains(search_text, case=False, na=False)]
+
+        # fallback if too few
+        if len(df_filtered) < 20:
+            st.warning("Too few reviews after filter — showing more data")
+            df_filtered = df_p
+
+        # ===============================
+        # 🤖 SUMMARY
+        # ===============================
+        st.markdown("### 🤖 Quick Summary")
+
+        top_positive = df_filtered[df_filtered["rating"] >= 4]["review"].drop_duplicates().head(3)
+        top_negative = df_filtered[df_filtered["rating"] < 3]["review"].drop_duplicates().head(3)
+
+        st.info(f"""
+👍 What customers like:
+- {"\n- ".join(top_positive)}
+
+⚠️ Issues:
+- {"\n- ".join(top_negative)}
+""")
+
+        # ===============================
+        # 📝 REVIEWS
+        st.markdown("### 📝 Reviews")
+
+        # ---------- SCROLLABLE CONTAINER ----------
+        st.markdown("""
+        <div style="max-height:500px; overflow-y:auto; padding-right:10px;">
+        """, unsafe_allow_html=True)
+
+        for _, row in df_filtered.iterrows():
+
             stars = "⭐" * int(row["rating"])
+
+            # color based on rating
+            if row["rating"] >= 4:
+                color = "#22c55e"
+            elif row["rating"] == 3:
+                color = "#f59e0b"
+            else:
+                color = "#ef4444"
 
             st.markdown(f"""
             <div style="
-                padding:15px;
+                background:#111827;
+                padding:12px;
                 margin-bottom:10px;
-                border-radius:12px;
-                background:rgba(255,255,255,0.05);
-                border:1px solid rgba(255,215,0,0.2);
+                border-radius:10px;
+                border-left:4px solid {color};
             ">
-                <h4 style='color:#FFD700'>{row["product"]}</h4>
-                <p>{stars}</p>
-                <p>{row["review"]}</p>
+                <b style="color:#60a5fa;">{row['customer_name']}</b>
+                <span style="float:right; color:#facc15;">{stars}</span>
+                <br>
+                <span style="color:#e5e7eb; font-size:14px;">
+                    {row['review']}
+                </span>
             </div>
             """, unsafe_allow_html=True)
 
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
 # ================= CHATBOT =================
+
 with tab3:
+    # chatbot code
 
-    st.markdown("## 🤖 Smart Business Assistant")
+# ================== PART 1 : CORE SETUP ==================
 
-    # -------- SESSION --------
-    if "chat" not in st.session_state:
-        st.session_state.chat = []
+    import streamlit as st
+    import pandas as pd
+    import plotly.express as px
+    import random
+    import re
+    import time
+    from difflib import get_close_matches
 
-    # -------- INTENT --------
-    def parse_intent(q):
-        q = q.lower()
 
-        if "revenue" in q or "sales" in q: return "revenue"
-        if "order" in q: return "orders"
-        if "profit" in q or "margin" in q: return "profit"
-        if "trend" in q or "graph" in q: return "trend"
-        if "city" in q: return "city"
-        if "category" in q: return "category"
-        if "top" in q or "best" in q: return "top_product"
-        if "low" in q or "worst" in q: return "low_product"
-        if "recommend" in q or "suggest" in q: return "recommend"
-        if "forecast" in q or "future" in q: return "forecast"
+    # ================== INTENT MAP (ADVANCED) ==================
 
-        return "unknown"
+    INTENT_MAP = {
+    "revenue": ["revenue","sales","sale","income","earning","turnover"],
+    "orders": ["orders","order count","total order"],
+    "profit": ["profit","margin","loss"],
+    "trend": ["trend","graph","growth","increase","decrease"],
+    "city": ["city","location"],
+    "category": ["category","type"],
+    "top_product": ["top product","best product","bestseller","most selling"],
+    "low_product": ["low product","worst product","least selling"],
+    "top_n_product": ["top 5","top products","top items"],
+    "bottom_n_product": ["bottom 5","lowest products"],
+    "compare_city": ["compare cities","sales across cities"],
+    "hour_analysis": ["hour","peak hour","best time"],
+    "recommend": ["recommend","suggest","strategy"],
+    "forecast": ["forecast","future","prediction"]
+    }
 
-    # -------- ANSWERS --------
-    def answer_intent(intent, df):
+    ALL_KEYS = [k for v in INTENT_MAP.values() for k in v]
 
-        if intent == "revenue":
-            total = df['revenue'].sum()
-            avg = df['revenue'].mean()
-            return f"💰 Revenue: ₹{total:,}\n🧾 Avg Order: ₹{avg:,.0f}"
 
-        if intent == "orders":
-            return f"📦 Orders: {len(df)}"
+    # ================== 2000+ TYPE QUESTIONS SUPPORT ==================
 
-        if intent == "profit":
-            profit = df['profit'].sum()
-            margin = (profit/df['revenue'].sum()*100) if df['revenue'].sum()>0 else 0
-            return f"📈 Profit: ₹{profit:,.0f} | Margin: {margin:.2f}%"
+    QUESTION_MAP = {
+    "total revenue": ["revenue"],
+    "average order value": ["revenue"],
+    "profit details": ["profit"],
+    "profit margin": ["profit"],
+    "total orders": ["orders"],
+    "top product": ["top_product"],
+    "worst product": ["low_product"],
+    "top 5 products": ["top_n_product"],
+    "bottom 5 products": ["bottom_n_product"],
+    "highest sales city": ["city"],
+    "compare sales across cities": ["compare_city"],
+    "best category": ["category"],
+    "lowest category": ["category"],
+    "sales trend": ["trend"],
+    "profit trend": ["trend","profit"],
+    "future sales": ["forecast"],
+    "prediction": ["forecast"],
+    "recommendation": ["recommend"],
+    "business advice": ["recommend"],
+    "highest sales hour": ["hour_analysis"]
+    }
 
-        if intent == "top_product":
-            top = df.groupby("product")["revenue"].sum().idxmax()
-            val = df.groupby("product")["revenue"].sum().max()
-            return f"🔥 Top Product: {top}\n💰 Sales: ₹{val:,}"
 
-        if intent == "low_product":
-            low = df.groupby("product")["revenue"].sum().idxmin()
-            return f"⚠️ Low Product: {low}"
+    # ================== QUERY SPLIT ==================
 
-        if intent == "city":
-            city = df.groupby("city")["revenue"].sum().idxmax()
-            return f"📍 Best City: {city}"
+    def split_query(q):
+        return [p.strip() for p in re.split(r"and|aur|,|\?|&", q.lower()) if p.strip()]
 
-        if intent == "category":
-            cat = df.groupby("category")["revenue"].sum().idxmax()
-            return f"🛒 Best Category: {cat}"
 
-        if intent == "recommend":
-            top = df.groupby("product")["revenue"].sum().idxmax()
-            low = df.groupby("product")["revenue"].sum().idxmin()
-            city = df.groupby("city")["revenue"].sum().idxmax()
+    # ================== INTENT DETECTION (SMART) ==================
 
-            return f"""
-🎯 Recommendation:
-• Focus on {top}
-• Improve {low}
-• Expand in {city}
-"""
+    def detect_intents(q):
+        ql = q.lower().strip()
 
-        if intent == "trend":
-            return "📊 Showing revenue trend..."
+        # 1. Direct match
+        for key, val in QUESTION_MAP.items():
+            if key in ql:
+                return val
 
-        if intent == "forecast":
-            return "📈 Showing future sales prediction..."
+        intents = set()
 
-        return "🤖 Try: revenue, orders, profit, trend, city, category, top product"
+        # 2. Keyword match
+        for intent, keys in INTENT_MAP.items():
+            for k in keys:
+                if k in ql:
+                    intents.add(intent)
 
-    # -------- GRAPH --------
+        # 3. Fuzzy match (spelling mistake)
+        if not intents:
+            for word in ql.split():
+                match = get_close_matches(word, ALL_KEYS, n=1, cutoff=0.7)
+                if match:
+                    for intent, keys in INTENT_MAP.items():
+                        if match[0] in keys:
+                            intents.add(intent)
+
+        return list(intents) if intents else ["unknown"]
+
+
+    # ================== PART 2 : ANSWER ENGINE ==================
+
+    def get_answer(intents, df, user_q=""):
+
+        out = []
+
+        # ---------- SAFE CALCULATIONS ----------
+        total_revenue = df["revenue"].sum()
+        total_orders = len(df)
+        total_profit = df["profit"].sum()
+
+        avg_order = (total_revenue / total_orders) if total_orders else 0
+        margin = (total_profit / total_revenue * 100) if total_revenue > 0 else 0
+
+        for i in intents:
+
+            # ---------- REVENUE ----------
+            if i == "revenue":
+                out.append(f"""
+    💰 Revenue Insights
+    • Total Revenue: ₹{total_revenue:,.0f}
+    • Avg Order Value: ₹{avg_order:,.0f}
+    • Revenue per Day: ₹{df.groupby("date")["revenue"].sum().mean():,.0f}
+    """)
+
+            # ---------- ORDERS ----------
+            elif i == "orders":
+                peak_hour = df.groupby("hour").size().idxmax() if not df.empty else 0
+
+                out.append(f"""
+    📦 Order Analysis
+    • Total Orders: {total_orders}
+    • Avg Orders/Day: {df.groupby("date").size().mean():.0f}
+    • Peak Hour: {peak_hour}
+    """)
+
+            # ---------- PROFIT ----------
+            elif i == "profit":
+                out.append(f"""
+    📈 Profit Analysis
+    • Total Profit: ₹{total_profit:,.0f}
+    • Profit Margin: {margin:.2f}%
+    • Profit per Order: ₹{(total_profit/total_orders if total_orders else 0):,.0f}
+    """)
+
+            # ---------- TOP PRODUCT ----------
+            elif i == "top_product":
+                grp = df.groupby("product")["revenue"].sum()
+                if not grp.empty:
+                    p = grp.idxmax()
+                    val = grp.max()
+                    out.append(f"""
+    🔥 Top Product
+    • {p}
+    • Revenue: ₹{val:,.0f}
+    """)
+
+            # ---------- LOW PRODUCT ----------
+            elif i == "low_product":
+                grp = df.groupby("product")["revenue"].sum()
+                if not grp.empty:
+                    p = grp.idxmin()
+                    val = grp.min()
+                    out.append(f"""
+    ⚠️ Weak Product
+    • {p}
+    • Revenue: ₹{val:,.0f}
+    """)
+
+            # ---------- TOP 5 PRODUCTS ----------
+            elif i == "top_n_product":
+                grp = df.groupby("product")["revenue"].sum().nlargest(5)
+                if not grp.empty:
+                    text = "\n".join([f"• {k} → ₹{v:,.0f}" for k, v in grp.items()])
+                    out.append(f"""
+    🔥 Top 5 Products
+    {text}
+    """)
+
+            # ---------- BOTTOM 5 PRODUCTS ----------
+            elif i == "bottom_n_product":
+                grp = df.groupby("product")["revenue"].sum().nsmallest(5)
+                if not grp.empty:
+                    text = "\n".join([f"• {k} → ₹{v:,.0f}" for k, v in grp.items()])
+                    out.append(f"""
+    ⚠️ Bottom 5 Products
+    {text}
+    """)
+
+            # ---------- CITY ----------
+            elif i == "city":
+                grp = df.groupby("city")["revenue"].sum()
+                if not grp.empty:
+                    c = grp.idxmax()
+                    val = grp.max()
+                    out.append(f"""
+    📍 Top City
+    • {c}
+    • Revenue: ₹{val:,.0f}
+    """)
+
+            # ---------- CITY COMPARISON ----------
+            elif i == "compare_city":
+                grp = df.groupby("city")["revenue"].sum()
+                if not grp.empty:
+                    text = "\n".join([f"• {k} → ₹{v:,.0f}" for k, v in grp.items()])
+                    out.append(f"""
+    🏙️ City Comparison
+    {text}
+    """)
+
+            # ---------- CATEGORY ----------
+            elif i == "category":
+                grp = df.groupby("category")["revenue"].sum()
+                if not grp.empty:
+                    cat = grp.idxmax()
+                    out.append(f"""
+    🛒 Best Category
+    • {cat}
+    """)
+
+            # ---------- HOUR ANALYSIS ----------
+            elif i == "hour_analysis":
+                if not df.empty:
+                    hour = df.groupby("hour")["revenue"].sum().idxmax()
+                    out.append(f"""
+    ⏰ Best Sales Hour
+    • {hour}
+    """)
+
+            # ---------- TREND ----------
+            elif i == "trend":
+                out.append("""
+    📊 Trend Analysis
+    Sales trend is shown below.
+    Look for spikes 📈 and drops 📉
+    """)
+
+            # ---------- FORECAST ----------
+            elif i == "forecast":
+                out.append("""
+    📈 Forecast
+    Future prediction is based on past trends.
+    """)
+
+            # ---------- RECOMMEND ----------
+            elif i == "recommend":
+                grp_p = df.groupby("product")["revenue"].sum()
+                grp_c = df.groupby("city")["revenue"].sum()
+
+                if not grp_p.empty and not grp_c.empty:
+                    top = grp_p.idxmax()
+                    low = grp_p.idxmin()
+                    city = grp_c.idxmax()
+
+                    out.append(f"""
+    🎯 Business Strategy
+    • Focus on: {top}
+    • Improve: {low}
+    • Expand in: {city}
+    """)
+
+        # ---------- FALLBACK ----------
+        if not out:
+            return "🤖 Try asking about revenue, profit, product, city, or trend."
+
+        # ---------- CLEAN OUTPUT ----------
+        clean_text = "\n".join(out)
+        clean_text = re.sub(r"<.*?>", "", clean_text)
+
+        return clean_text.strip()
+
+
+
+    # ================== PART 3 : GRAPH ENGINE ==================
+
     def show_graph(intent, df):
 
+        # ---------- SAFETY ----------
+        if df.empty:
+            st.warning("No data available")
+            return
+
+        # ---------- TREND GRAPH ----------
         if intent == "trend":
-            fig = px.line(df.groupby("date")["revenue"].sum().reset_index(),
-                          x="date", y="revenue")
+
+            df_trend = df.groupby("date")["revenue"].sum().reset_index()
+
+            fig = px.line(
+                df_trend,
+                x="date",
+                y="revenue",
+                title="📊 Revenue Trend"
+            )
+
+            fig.update_layout(
+                template="plotly_dark",
+                xaxis_title="Date",
+                yaxis_title="Revenue"
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
+        # ---------- CITY GRAPH ----------
         elif intent == "city":
-            fig = px.bar(df.groupby("city")["revenue"].sum().reset_index(),
-                         x="city", y="revenue")
+
+            df_city = df.groupby("city")["revenue"].sum().reset_index()
+
+            fig = px.bar(
+                df_city,
+                x="city",
+                y="revenue",
+                title="🏙️ City Sales"
+            )
+
+            fig.update_layout(template="plotly_dark")
+
             st.plotly_chart(fig, use_container_width=True)
 
+        # ---------- CATEGORY GRAPH ----------
         elif intent == "category":
-            fig = px.pie(df, names="category")
+
+            fig = px.pie(
+                df,
+                names="category",
+                title="🛒 Category Share"
+            )
+
+            fig.update_layout(template="plotly_dark")
+
             st.plotly_chart(fig, use_container_width=True)
 
+        # ---------- FORECAST GRAPH ----------
         elif intent == "forecast":
+
             try:
                 from statsmodels.tsa.arima.model import ARIMA
+
                 df_trend = df.groupby("date")["revenue"].sum().reset_index()
 
                 if len(df_trend) > 10:
+
                     model = ARIMA(df_trend["revenue"], order=(2,1,2)).fit()
                     forecast = model.forecast(steps=7)
 
-                    future_dates = pd.date_range(df_trend["date"].max(), periods=7)
+                    future_dates = pd.date_range(
+                        start=df_trend["date"].max(),
+                        periods=7
+                    )
 
-                    fig = px.line(df_trend, x="date", y="revenue")
-                    fig.add_scatter(x=future_dates, y=forecast)
+                    fig = px.line(
+                        df_trend,
+                        x="date",
+                        y="revenue",
+                        title="📈 Sales Forecast"
+                    )
+
+                    fig.add_scatter(
+                        x=future_dates,
+                        y=forecast,
+                        mode="lines",
+                        name="Forecast"
+                    )
+
+                    fig.update_layout(template="plotly_dark")
 
                     st.plotly_chart(fig, use_container_width=True)
+
                 else:
-                    st.warning("Not enough data")
-            except:
-                st.warning("Forecast not available")
+                    st.warning("Not enough data for forecast")
 
-    # -------- MAIN --------
-    def get_response(q, df):
-        intent = parse_intent(q)
-        return answer_intent(intent, df), intent
+            except Exception as e:
+                st.error("Forecast error")
 
-    # -------- QUICK --------
-    st.markdown("### ⚡ Quick Actions")
 
-    b1, b2, b3, b4 = st.columns(4)
 
-    if b1.button("💰 Revenue"):
-        st.session_state.chat.append(("Revenue", get_response("revenue", df_f)[0]))
 
-    if b2.button("📊 Trend"):
-        st.session_state.chat.append(("Trend", "📊 Showing trend..."))
-        show_graph("trend", df_f)
+    # ================== PART 4 : PROCESS ENGINE ==================
 
-    if b3.button("🔥 Top Product"):
-        st.session_state.chat.append(("Top Product", get_response("top product", df_f)[0]))
+    def process_query(q, df):
 
-    if b4.button("🎯 Recommend"):
-        st.session_state.chat.append(("Recommendation", get_response("recommend", df_f)[0]))
+        # ---------- EMPTY CHECK ----------
+        if not q or not q.strip():
+            return
 
-    # -------- INPUT --------
-    user_q = st.text_input("💬 Ask anything...", key="chat_input")
+        # ---------- MULTI QUERY SPLIT ----------
+        queries = split_query(q)
 
-    col1, col2 = st.columns([4,1])
-    with col1:
-        ask = st.button("🚀 Ask")
-    with col2:
-        clear = st.button("🧹 Clear")
+        all_intents = []
 
-    if ask and user_q:
-        ans, intent = get_response(user_q, df_f)
-        st.session_state.chat.append((user_q, ans))
+        for single_q in queries:
+            detected = detect_intents(single_q)
+            all_intents.extend(detected)
 
-        if intent in ["trend", "city", "category", "forecast"]:
-            show_graph(intent, df_f)
+        # ---------- REMOVE DUPLICATE ----------
+        all_intents = list(set(all_intents))
 
-    if clear:
+        # ---------- GET ANSWER ----------
+        ans = get_answer(all_intents, df, q)
+
+        # ---------- INIT CHAT ----------
+        if "chat" not in st.session_state:
+            st.session_state.chat = []
+
+        # ---------- SAVE CHAT ----------
+        st.session_state.chat.append((q, ans))
+
+        # ---------- INPUT RESET FLAG ----------
+        if "clear_input" not in st.session_state:
+            st.session_state.clear_input = False
+
+        st.session_state.clear_input = True
+
+        # ---------- GRAPH AUTO ----------
+    
+        st.session_state.last_graphs = all_intents
+
+
+
+    # ================== PART 5 : SESSION + INPUT CONTROL ==================
+
+
+        # ADD THIS (PART 5 के top में)
+    if "clicked_q" not in st.session_state:
+        st.session_state.clicked_q = None
+
+    if "last_graphs" not in st.session_state:
+        st.session_state.last_graphs = []
+
+    # ---------- INIT SESSION ----------
+    if "chat" not in st.session_state:
         st.session_state.chat = []
 
-    # -------- DISPLAY --------
+    if "clear_input" not in st.session_state:
+        st.session_state.clear_input = False
+
+
+    # ---------- INPUT UI ----------
+    st.markdown("### 💬 Ask AI")
+
+    col1, col2, col3 = st.columns([6,1,1])
+
+    with col1:
+
+        # safe value reset system
+        default_value = ""
+
+        if not st.session_state.clear_input:
+            default_value = st.session_state.get("chat_input_main", "")
+
+        user_q = st.text_input(
+            "",
+            value=default_value,
+            placeholder="Ask anything about your business...",
+            key="chat_input_main"
+        )
+
+    with col2:
+        ask = st.button("🚀", use_container_width=True)
+
+    with col3:
+        clear = st.button("🧹", use_container_width=True)
+
+
+    # ---------- RESET FLAG ----------
+    st.session_state.clear_input = False
+
+
+    # ---------- HANDLE INPUT ----------
+    if (ask or user_q) and user_q.strip():
+        process_query(user_q, df_f)
+
+
+    # ---------- CLEAR CHAT ----------
+    if clear:
+        st.session_state.chat = []
+        st.rerun()
+
+
+
+   # ================== PART 6 : FINAL STABLE SUGGESTIONS ==================
+
+    st.markdown("#### 💡 Suggestions")
+
+    # ---------- GLOBAL LIST ----------
+    all_suggestions = [
+        "What is total revenue?",
+        "Show profit details",
+        "How many orders are there?",
+        "What is the profit margin?",
+        "Which product is top selling?",
+        "Which product is performing worst?",
+        "Which city has highest sales?",
+        "Which category performs best?",
+        "Show sales trend",
+        "Predict future sales",
+        "What is average order value?",
+        "Which city should we expand in?",
+        "Which category gives highest profit?",
+        "Which product needs improvement?",
+        "Compare sales across cities",
+        "Which hour has highest sales?",
+        "Show profit trend",
+        "Which category has lowest sales?",
+        "Top 5 products by revenue",
+        "Bottom 5 products by revenue",
+        "Which city has lowest performance?",
+        "Show order distribution",
+        "What is revenue growth?",
+        "Which product has highest margin?",
+        "Show category wise revenue",
+        "Which product is trending now?",
+        "Which segment is growing fast?",
+        "Give business recommendations",
+        "Revenue and profit summary",
+        "Sales trend and forecast"
+    ]
+
+    # ---------- INIT ----------
+    if "suggestions" not in st.session_state:
+        shuffled = all_suggestions.copy()
+        random.shuffle(shuffled)
+        st.session_state.suggestions = shuffled[:4]
+
+    if "clicked_q" not in st.session_state:
+        st.session_state.clicked_q = None
+
+
+    # ---------- DISPLAY ----------
+    cols = st.columns(4)
+
+    for i, q in enumerate(st.session_state.suggestions):
+
+        if cols[i].button(q, key=f"sug_{i}_{q}"):
+
+            # store only
+            st.session_state.clicked_q = q
+
+
+    # ---------- PROCESS AFTER CLICK ----------
+    if st.session_state.clicked_q:
+
+        process_query(st.session_state.clicked_q, df_f)
+
+        # new shuffle
+        shuffled = all_suggestions.copy()
+        random.shuffle(shuffled)
+        st.session_state.suggestions = shuffled[:4]
+
+        st.session_state.clicked_q = None
+
+
+
+    # ================== PART 7 : CHAT DISPLAY ==================
+
     st.markdown("### 🧠 Conversation")
 
+    # ---------- CHAT CONTAINER ----------
+    st.markdown("""
+    <div style='
+        max-width:700px;
+        margin:auto;
+        max-height:420px;
+        overflow-y:auto;
+        padding:10px;
+        border-radius:12px;
+        background:rgba(255,255,255,0.02);
+        border:1px solid rgba(255,255,255,0.05);
+    '>
+    """, unsafe_allow_html=True)
+
+
+    # ---------- MESSAGES ----------
     for q, a in st.session_state.chat[::-1]:
-        st.markdown(f"🧑 **You:** {q}")
-        st.markdown(f"🤖 **Bot:** {a}")
+
+        # USER MESSAGE (RIGHT)
+        st.markdown(f"""
+        <div style="
+            display:flex;
+            justify-content:flex-end;
+            margin:6px 0;
+        ">
+            <div style="
+                background:#2563eb;
+                color:white;
+                padding:8px 12px;
+                border-radius:10px;
+                max-width:70%;
+                font-size:14px;
+            ">
+            {q}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # BOT MESSAGE (LEFT)
+        st.markdown(f"""
+        <div style="
+            display:flex;
+            justify-content:flex-start;
+            margin:6px 0;
+        ">
+            <div style="
+                background:#111827;
+                color:#e5e7eb;
+                padding:8px 12px;
+                border-radius:10px;
+                max-width:70%;
+                font-size:14px;
+                border-left:3px solid #3b82f6;
+            ">
+            {a}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+
+    # ---------- CLOSE CONTAINER ----------
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+
+    # ================= GRAPH DISPLAY (PERSISTENT) =================
+
+if "last_graphs" in st.session_state:
+
+    for intent in st.session_state.last_graphs:
+        show_graph(intent, df_f)
+
+
+    # ================== PART 8 : FINAL POLISH ==================
+
+    # ---------- TYPING ANIMATION ----------
+    def typing_effect(text):
+        placeholder = st.empty()
+        typed = ""
+
+        for ch in text:
+            typed += ch
+            placeholder.markdown(f"🤖 {typed}")
+            time.sleep(0.002)
+
+        return placeholder
+
+
+    # ---------- ENHANCED PROCESS (OPTIONAL EFFECT) ----------
+    def process_query_with_effect(q, df):
+
+        if not q.strip():
+            return
+
+        queries = split_query(q)
+        all_intents = []
+
+        for part in queries:
+            all_intents.extend(detect_intents(part))
+
+        all_intents = list(set(all_intents))
+
+        ans = get_answer(all_intents, df, q)
+
+        if "chat" not in st.session_state:
+            st.session_state.chat = []
+
+        # typing animation
+        typing_effect(ans)
+
+        # save chat
+        st.session_state.chat.append((q, ans))
+
+        # reset input
+        st.session_state.clear_input = True
+
+        # graphs
+        for intent in all_intents:
+            show_graph(intent, df)
+
+
+    # ---------- OPTIONAL SWITCH (use animation or normal) ----------
+    USE_TYPING_EFFECT = False
+
+    if USE_TYPING_EFFECT:
+
+        # override process function
+        def process_query(q, df):
+            process_query_with_effect(q, df)
